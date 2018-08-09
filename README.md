@@ -1,7 +1,6 @@
 # DPoSPool
-DPoS Delegate pool(now Lisk, soon ARK/SHIFT)
+Sauco Pool
 <br>
-Donnations: 5648883430033121919L
 
 #Requirements
 
