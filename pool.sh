@@ -37,7 +37,7 @@ DB_CONFIG="$(pwd)/pgsql/pgsql.conf"
 
 CMDS=("node" "crontab" "curl")
 CMDS1=("forever" "psql" "createdb" "createuser" "dropdb" "dropuser")
-check_cmds CMDS[@]
+#check_cmds CMDS[@]
 
 ################################################################################
 
@@ -121,15 +121,24 @@ install_prereq() {
     echo -n "Enable postgresql... "
         sudo update-rc.d postgresql enable
     echo -e "done.\n"
+
+    return 0;
 }
 
 install_dependencias(){
+  echo -n "Instalando dependencias bower \n"
   cd public_src
   bower --allow-root install  &> /dev/null || { echo -e "\n\nCould not install bower components for the web wallet. Exiting." && exit 1; }
-  npm install --production --unsafe-perm  &> /dev/null || { echo "Could not install NPM components, please check the log directory. Exiting." && exit 1; }
+  echo -n "Instalando dependencias npm \n"
+  npm install  &> /dev/null || { echo "Could not install NPM components, please check the log directory. Exiting." && exit 1; }
+  echo -n "Ejecutando gulp release \n"
   gulp release  &> /dev/null
   cd ..
-  npm install --production --unsafe-perm  &> /dev/null || { echo "Could not install NPM components, please check the log directory. Exiting." && exit 1; }
+  echo -n "Finalizando instalación de UI"
+  npm install &> /dev/null || { echo "Could not install NPM components, please check the log directory. Exiting." && exit 1; }
+  echo -n "UI Instalada"
+
+  return 0;
 }
 
 start_postgres() {
@@ -146,7 +155,7 @@ start_postgres() {
         sudo /etc/init.d/postgresql start  &> /dev/null || { echo -n "Could not start postgresql, try to start it manually. Exiting." && exit 1; }
     fi
 
-    return 0
+    return 0;
 }
 
 
@@ -236,12 +245,12 @@ restore_db() {
 install_pool() {
   echo "#####$SCRIPT_NAME Installation#####"
   echo " * Installation may take several minutes"
-  check_cmds CMDS1[@]
-  echo "√ Check using commands."
   echo " * Instalando Prerequisitos"
   install_node_npm
   install_prereq
   install_dependencias
+  check_cmds CMDS1[@]
+  echo "√ Check using commands."
   echo "√ Pre requisitos instalados."
   stop_pool &> /dev/null
   stop_postgresql &> /dev/null    
