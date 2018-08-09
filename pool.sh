@@ -40,42 +40,8 @@ CMDS1=("forever" "psql" "createdb" "createuser" "dropdb" "dropuser")
 check_cmds CMDS[@]
 
 ################################################################################
-install_node_npm() {
 
-    echo -n "Installing nodejs and npm... "
-    curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash - &>> $logfile
-    sudo apt-get install -y -qq nodejs &>> $logfile || { echo "Could not install nodejs and npm. Exiting." && exit 1; }
-    echo -e "done.\n" && echo -n "Installing bower... "
-    sudo npm install bower -g &>> $logfile || { echo "Could not install bower. Exiting." && exit 1; }
-    echo -e "done.\n" && echo -n "Installing Gulp... "
-    sudo npm install gulp -g &>> $logfile || { echo "Could not install gulp. Exiting." && exit 1; }
-    echo -e "done.\n"
-
-    return 0;
-}
-
-install_prereq() {
-    #Instalación de la base de datos
-    echo -n "Updating apt repository sources for postgresql.. ";
-    sudo bash -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ wheezy-pgdg main" > /etc/apt/sources.list.d/pgdg.list' &>> $logfile || \
-    { echo "Could not add postgresql repo to apt." && exit 1; }
-    echo -e "done.\n"
-
-    echo -n "Adding postgresql repo key... "
-    sudo wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | sudo apt-key add - &>> $logfile || \
-    { echo "Could not add postgresql repo key. Exiting." && exit 1; }
-    echo -e "done.\n"
-
-    echo -n "Installing postgresql... "
-    sudo apt-get update -qq &> /dev/null && sudo apt-get install -y -qq postgresql-9.6 postgresql-contrib-9.6 libpq-dev &>> $logfile || \
-    { echo "Could not install postgresql. Exiting." && exit 1; }
-    echo -e "done.\n"
-
-    echo -n "Enable postgresql... "
-        sudo update-rc.d postgresql enable
-    echo -e "done.\n"
-}
-
+#Database
 create_user() {
 
     if start_postgres; then
@@ -118,13 +84,49 @@ create_database() {
     fi
 }
 
+install_node_npm() {
+
+    echo -n "Installing nodejs and npm... "
+    curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash
+    sudo apt-get install -y -qq nodejs || { echo "Could not install nodejs and npm. Exiting." && exit 1; }
+    echo -e "done.\n" && echo -n "Installing bower... "
+    sudo npm install bower -g || { echo "Could not install bower. Exiting." && exit 1; }
+    echo -e "done.\n" && echo -n "Installing Gulp... "
+    sudo npm install gulp -g || { echo "Could not install gulp. Exiting." && exit 1; }
+    echo -e "done.\n"
+
+    return 0;
+}
+
+install_prereq() {
+    #Instalación de la base de datos
+    echo -n "Updating apt repository sources for postgresql.. ";
+    sudo bash -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ wheezy-pgdg main" > /etc/apt/sources.list.d/pgdg.list' || \
+    { echo "Could not add postgresql repo to apt." && exit 1; }
+    echo -e "done.\n"
+
+    echo -n "Adding postgresql repo key... "
+    sudo wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | sudo apt-key add || \
+    { echo "Could not add postgresql repo key. Exiting." && exit 1; }
+    echo -e "done.\n"
+
+    echo -n "Installing postgresql... "
+    sudo apt-get update -qq &> /dev/null && sudo apt-get install -y -qq postgresql-9.6 postgresql-contrib-9.6 libpq-dev || \
+    { echo "Could not install postgresql. Exiting." && exit 1; }
+    echo -e "done.\n"
+
+    echo -n "Enable postgresql... "
+        sudo update-rc.d postgresql enable
+    echo -e "done.\n"
+}
+
 install_dependencias(){
   cd public_src
-  bower --allow-root install &>> $logfile || { echo -e "\n\nCould not install bower components for the web wallet. Exiting." && exit 1; }
-  npm install --production --unsafe-perm &>> $logfile || { echo "Could not install NPM components, please check the log directory. Exiting." && exit 1; }
+  bower --allow-root install || { echo -e "\n\nCould not install bower components for the web wallet. Exiting." && exit 1; }
+  npm install --production --unsafe-perm || { echo "Could not install NPM components, please check the log directory. Exiting." && exit 1; }
   gulp release
   cd ..
-  npm install --production --unsafe-perm &>> $logfile || { echo "Could not install NPM components, please check the log directory. Exiting." && exit 1; }
+  npm install --production --unsafe-perm || { echo "Could not install NPM components, please check the log directory. Exiting." && exit 1; }
 }
 
 
@@ -234,6 +236,7 @@ install_pool() {
   start_pool
   echo " * Installation completed. $SCRIPT_NAME started."
 }
+
 autostart_pool() {
   local cmd="crontab"
 
@@ -262,6 +265,7 @@ autostart_pool() {
     return 0
   fi
 }
+
 check_status() {
   if [ -f "$PID_APP_FILE" ]; then
     PID="$(cat "$PID_APP_FILE")"
