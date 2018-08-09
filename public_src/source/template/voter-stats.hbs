@@ -1,22 +1,22 @@
 <div class="container middle">
 	<div class="vstat">
-		<h1 class="page_title">VOTER STATISTICS</h1>
+		<h1 class="page_title">ESTADÍSTICAS DEL VOTANTE</h1>
 		<div class="row">
 			<div class="col-md-12">
 				<div class="box">
 					<div class="row">
 						<div class="col-md-4 col-sm-6 col-sm-6">
 							<div class="topbox_item topbox_item_icon1">
-								Voter address
+								Dirección Votante
 								<br>
 								<a href="{{explorer_url}}" class="address" target="_blank" title="{{address}}">{{address}}</a>
 							</div>
 						</div>
 						<div class="col-md-4 col-sm-6 col-sm-6">
 							<div class="topbox_item topbox_item_icon2">
-								Current pending balance
+								Saldo pendiente actual
 								<br>
-								<span class="balance">{{balance}} Ⱡ</span>
+								<span class="balance">{{balance}} SAUCO</span>
 							</div>
 						</div>
 					</div>
@@ -29,7 +29,7 @@
 				<div class="box">
 					<div class="box_title">Balance</div>
 					<div class="box_cont">
-						<div class="hcharts" data-url='/voter-stats/aget_balance/' data-ptitle="Balance (SAUCO)"></div>
+						<div class="hcharts" data-url='/voter-stats/aget_balance/' data-ptitle="Balance (LSK)"></div>
 					</div>
 				</div>
 			</div>
@@ -38,16 +38,16 @@
 		<div class="row">
 			<div class="col-md-12">
 				<div class="box">
-					<div class="box_title">Last 50 Payments</div>
+					<div class="box_title">Ultimos 50 pagos</div>
 					<div class="box_cont tab" id="withdrawal">
 						<div class="scroll_wrap">
 							<table class="table">
 								<thead>
 									<tr class="tr_head">
 										<th class="tr1">TXID</th>
-										<th class="tr2">Time</th>
-										<th class="tr3">Network fee deduced</th>
-										<th class="tr4">Reward</th>
+										<th class="tr2">Tiempo</th>
+										<th class="tr3">Fee de red deducido</th>
+										<th class="tr4">Recompensa</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -57,12 +57,12 @@
 											<td class="tr1"><a href="{{explorer_url}}" target="_blank" title="Transaction: {{txid}}"/>{{txid}}</a></td>
 											<td class="tr2">{{date}}</td>
 											<td class="tr3">{{fees}}</td>
-											<td class="tr4">{{reward}} Ⱡ</div>
+											<td class="tr4">{{reward}} SAUCO</div>
 										</tr>
 										{{/each}}
 									{{else}}
 										<tr class="tr_item">
-											<td colspan="4" style="text-align: center;">You have not received payments yet</td>
+											<td colspan="4" style="text-align: center;">Tu no haz recibido pagos aún</td>
 										</tr>
 									{{/if}}
 								</tbody>
