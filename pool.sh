@@ -87,31 +87,34 @@ create_database() {
 install_node_npm() {
 
     echo -n "Installing nodejs and npm... "
-    curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash
-    sudo apt-get install -y -qq nodejs || { echo "Could not install nodejs and npm. Exiting." && exit 1; }
+    curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash  &> /dev/null
+    sudo apt-get install -y -qq nodejs  &> /dev/null || { echo "Could not install nodejs and npm. Exiting." && exit 1; }
     echo -e "done.\n" && echo -n "Installing bower... "
-    sudo npm install bower -g || { echo "Could not install bower. Exiting." && exit 1; }
+    sudo npm install bower -g  &> /dev/null || { echo "Could not install bower. Exiting." && exit 1; }
     echo -e "done.\n" && echo -n "Installing Gulp... "
-    sudo npm install gulp -g || { echo "Could not install gulp. Exiting." && exit 1; }
+    sudo npm install gulp -g  &> /dev/null || { echo "Could not install gulp. Exiting." && exit 1; }
     echo -e "done.\n"
 
     return 0;
 }
 
 install_prereq() {
+
+    echo -n "Instalando forever..."
+    npm install forever -g &> /dev/null
     #Instalación de la base de datos
     echo -n "Updating apt repository sources for postgresql.. ";
-    sudo bash -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ wheezy-pgdg main" > /etc/apt/sources.list.d/pgdg.list' || \
+    sudo bash -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ wheezy-pgdg main" > /etc/apt/sources.list.d/pgdg.list'  &> /dev/null || \
     { echo "Could not add postgresql repo to apt." && exit 1; }
     echo -e "done.\n"
 
     echo -n "Adding postgresql repo key... "
-    sudo wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | sudo apt-key add || \
+    sudo wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | sudo apt-key add  &> /dev/null || \
     { echo "Could not add postgresql repo key. Exiting." && exit 1; }
     echo -e "done.\n"
 
     echo -n "Installing postgresql... "
-    sudo apt-get update -qq &> /dev/null && sudo apt-get install -y -qq postgresql-9.6 postgresql-contrib-9.6 libpq-dev || \
+    sudo apt-get update -qq &> /dev/null && sudo apt-get install -y -qq postgresql-9.6 postgresql-contrib-9.6 libpq-dev  &> /dev/null || \
     { echo "Could not install postgresql. Exiting." && exit 1; }
     echo -e "done.\n"
 
@@ -122,11 +125,28 @@ install_prereq() {
 
 install_dependencias(){
   cd public_src
-  bower --allow-root install || { echo -e "\n\nCould not install bower components for the web wallet. Exiting." && exit 1; }
-  npm install --production --unsafe-perm || { echo "Could not install NPM components, please check the log directory. Exiting." && exit 1; }
-  gulp release
+  bower --allow-root install  &> /dev/null || { echo -e "\n\nCould not install bower components for the web wallet. Exiting." && exit 1; }
+  npm install --production --unsafe-perm  &> /dev/null || { echo "Could not install NPM components, please check the log directory. Exiting." && exit 1; }
+  gulp release  &> /dev/null
   cd ..
-  npm install --production --unsafe-perm || { echo "Could not install NPM components, please check the log directory. Exiting." && exit 1; }
+  npm install --production --unsafe-perm  &> /dev/null || { echo "Could not install NPM components, please check the log directory. Exiting." && exit 1; }
+}
+
+start_postgres() {
+
+    installed=$(dpkg -l |grep postgresql |grep ii |head -n1 |wc -l);
+    running=$(ps aux |grep "bin\/postgres" |wc -l);
+
+    if [[ $installed -ne 1 ]]; then
+        echo "Postgres is not installed. Install postgres manually before continuing. Exiting."
+        exit 1;
+    fi
+
+    if [[ $running -ne 1 ]]; then
+        sudo /etc/init.d/postgresql start  &> /dev/null || { echo -n "Could not start postgresql, try to start it manually. Exiting." && exit 1; }
+    fi
+
+    return 0
 }
 
 
