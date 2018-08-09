@@ -40,30 +40,118 @@ CMDS1=("forever" "psql" "createdb" "createuser" "dropdb" "dropuser")
 check_cmds CMDS[@]
 
 ################################################################################
+install_node_npm() {
+
+    echo -n "Installing nodejs and npm... "
+    curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash - &>> $logfile
+    sudo apt-get install -y -qq nodejs &>> $logfile || { echo "Could not install nodejs and npm. Exiting." && exit 1; }
+    echo -e "done.\n" && echo -n "Installing bower... "
+    sudo npm install bower -g &>> $logfile || { echo "Could not install bower. Exiting." && exit 1; }
+    echo -e "done.\n" && echo -n "Installing Gulp... "
+    sudo npm install gulp -g &>> $logfile || { echo "Could not install gulp. Exiting." && exit 1; }
+    echo -e "done.\n"
+
+    return 0;
+}
+
+install_prereq() {
+    #Instalación de la base de datos
+    echo -n "Updating apt repository sources for postgresql.. ";
+    sudo bash -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ wheezy-pgdg main" > /etc/apt/sources.list.d/pgdg.list' &>> $logfile || \
+    { echo "Could not add postgresql repo to apt." && exit 1; }
+    echo -e "done.\n"
+
+    echo -n "Adding postgresql repo key... "
+    sudo wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | sudo apt-key add - &>> $logfile || \
+    { echo "Could not add postgresql repo key. Exiting." && exit 1; }
+    echo -e "done.\n"
+
+    echo -n "Installing postgresql... "
+    sudo apt-get update -qq &> /dev/null && sudo apt-get install -y -qq postgresql-9.6 postgresql-contrib-9.6 libpq-dev &>> $logfile || \
+    { echo "Could not install postgresql. Exiting." && exit 1; }
+    echo -e "done.\n"
+
+    echo -n "Enable postgresql... "
+        sudo update-rc.d postgresql enable
+    echo -e "done.\n"
+}
+
+create_user() {
+
+    if start_postgres; then
+        user_exists=$(grep postgres /etc/passwd |wc -l);
+        if [[ $user_exists == 1 ]]; then
+            res=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" 2> /dev/null)
+            if [[ $res -ne 1 ]]; then
+              echo -n "Creating database user... "
+              res=$(sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';" 2> /dev/null)
+              res=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" 2> /dev/null)
+              if [[ $res -eq 1 ]]; then
+                echo -e "done.\n"
+              fi
+            fi
+
+            echo -n "Creating database... "
+            res=$(sudo -u postgres dropdb --if-exists "$DB_NAME" 2> /dev/null)
+            res=$(sudo -u postgres createdb -O "$DB_USER" "$DB_NAME" 2> /dev/null)
+            res=$(sudo -u postgres psql -t -c "SELECT count(*) FROM pg_database where datname='$DB_NAME'" 2> /dev/null)
+            if [[ $res -eq 1 ]]; then
+                echo -e "done.\n"
+            fi
+        fi
+        return 0
+    fi
+
+    return 1;
+}
+
+create_database() {
+    res=$(sudo -u postgres dropdb --if-exists "$DB_NAME" 2> /dev/null)
+    res=$(sudo -u postgres createdb -O "$DB_USER" "$DB_NAME" 2> /dev/null)
+    res=$(sudo -u postgres psql -t -c "SELECT count(*) FROM pg_database where datname='$DB_NAME'" 2> /dev/null)
+    
+    if [[ $res -eq 1 ]]; then
+      echo "√ Postgresql database created successfully."
+    else
+      echo "X Failed to create Postgresql database."
+      exit 1
+    fi
+}
+
+install_dependencias(){
+  cd public_src
+  bower --allow-root install &>> $logfile || { echo -e "\n\nCould not install bower components for the web wallet. Exiting." && exit 1; }
+  npm install --production --unsafe-perm &>> $logfile || { echo "Could not install NPM components, please check the log directory. Exiting." && exit 1; }
+  gulp release
+  cd ..
+  npm install --production --unsafe-perm &>> $logfile || { echo "Could not install NPM components, please check the log directory. Exiting." && exit 1; }
+}
+
 
 #Database
-create_user() {
-  dropuser --if-exists "$DB_USER" -p "$DB_PORT" &> /dev/null
-  createuser --createdb "$DB_USER" -p "$DB_PORT" &> /dev/null
-  psql -qd postgres -c "ALTER USER "$DB_USER" WITH PASSWORD '$DB_PASS';" -p "$DB_PORT" &> /dev/null
-  if [ $? != 0 ]; then
-    echo "X Failed to create $SCRIPT_NAME database user."
-    exit 1
-  else
-    echo "√ $SCRIPT_NAME database user created successfully."
-  fi
-}
-create_database() {
-  dropdb --if-exists "$DB_NAME" -p "$DB_PORT" &> /dev/null
-  createdb "$DB_NAME" -p "$DB_PORT" &> /dev/null
-  psql -U "$DB_USER" -d "$DB_NAME" -f $(pwd)"/sql/database_scheme.sql" -p "$DB_PORT" &> /dev/null
-  if [ $? != 0 ]; then
-    echo "X Failed to create $SCRIPT_NAME database."
-    exit 1
-  else
-    echo "√ $SCRIPT_NAME database created successfully."
-  fi
-}
+#create_user() {
+#  dropuser --if-exists "$DB_USER" -p "$DB_PORT" &> /dev/null
+#  createuser --createdb "$DB_USER" -p "$DB_PORT" &> /dev/null
+#  psql -qd postgres -c "ALTER USER "$DB_USER" WITH PASSWORD '$DB_PASS';" -p "$DB_PORT" &> /dev/null
+#  if [ $? != 0 ]; then
+#    echo "X Failed to create $SCRIPT_NAME database user."$DB_USER" "$DB_PASS" "$DB_PORT
+#    exit 1
+#  else
+#    echo "√ $SCRIPT_NAME database user created successfully."
+#  fi
+#}
+#create_database() {
+#  dropdb --if-exists "$DB_NAME" -p "$DB_PORT" &> /dev/null
+#  createdb "$DB_NAME" -p "$DB_PORT" &> /dev/null
+#  psql -U "$DB_USER" -d "$DB_NAME" -f $(pwd)"/sql/database_scheme.sql" -p "$DB_PORT" &> /dev/null
+#  if [ $? != 0 ]; then
+#    echo "X Failed to create $SCRIPT_NAME database."
+#    exit 1
+#  else
+#    echo "√ $SCRIPT_NAME database created successfully."
+#  fi
+#}
+
 start_postgresql() {
   if [ -f $PID_DB_FILE ]; then
     echo "√ $SCRIPT_NAME database is running."
@@ -128,6 +216,11 @@ install_pool() {
   echo " * Installation may take several minutes"
   check_cmds CMDS1[@]
   echo "√ Check using commands."
+  echo " * Instalando Prerequisitos"
+  install_node_npm
+  install_prereq
+  install_dependencias
+  echo "√ Pre requisitos instalados."
   stop_pool &> /dev/null
   stop_postgresql &> /dev/null    
   rm -rf $DB_DATA
