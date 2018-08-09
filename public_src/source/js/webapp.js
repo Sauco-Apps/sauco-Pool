@@ -15,7 +15,7 @@
 	'use strict';
 
 	function WebApp(){
-		this.appname = "LSKPool";
+		this.appname = "Sauco Pool";
 		this.version = "1.0.0";
 		this.author = "ShineKami(https://lisk-ua.net/)";
 	}

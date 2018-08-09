@@ -533,9 +533,9 @@ Pool.prototype.get_explorer = function(address, method){
   }
 
   if(config.node.network == "mainnet"){
-    return "https://explorer.lisk.io/"+method+"/"+address;
+    return "https://explorer.sauco.io/"+method+"/"+address;
   } else {
-    return "https://testnet-explorer.lisk.io/"+method+"/"+address;
+    return "https://testnet-explorer.sauco.io/"+method+"/"+address;
   }
 }
 //Convert int lsk to float

@@ -1,5 +1,6 @@
 The MIT License (MIT)
 
+Copyright (c) 2018 Sauco Team
 Copyright (c) 2017 ShineKami
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
